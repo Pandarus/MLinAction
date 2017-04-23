@@ -1,0 +1,88 @@
+#导入包并设置Data路径
+import os
+import pandas as pd
+import numpy as np
+base_folder = 'E:/machine learning file/机器学习实战及配套代码/machinelearninginaction/'
+os.chdir(base_folder)
+
+#导入Data
+#y = w0 + w1*x1 + w2*x2，F1,F2,F3中values对应就是x1,x2,x3
+df = pd.read_csv('Ch05/testSet.txt',sep = '\t', header= None)
+df.columns = ['F2','F3','Label']
+df['F1'] = np.ones((100,1))
+
+#定义Sigmoid函数
+def sigmoid(z):
+    return 1.0/(1.0 + np.exp(-z))
+
+
+sample = np.mat(df.loc[:,['F1','F2','F3']])
+#直接对label进行shape得到的结果是（100，），array之后结果也是一样
+#，将label转换为Matrix之后shape是（1,100）可见Series并没有行列之分
+label = np.mat(df.loc[:,'Label']).T
+alpha = 0.001
+iterator = 500
+weights = np.ones((sample.shape[1],1))
+#w = pd.DataFrame(weights)
+#w.index = ['F1','F2']
+for i in range(iterator):
+    weights = weights + alpha * sample.T * (label - sigmoid(sample * weights))
+    
+import matplotlib.pyplot as plt
+
+%matplotlib inline
+# 绘制分类效果图
+LABEL_COLOR_MAP = {0:'g',1:'r'}
+label_color = []
+for i in range(len(label)):
+    label_color.append(LABEL_COLOR_MAP[label[i,0]])
+x = np.arange(-3.0,3.0,1)
+y =(-weights[0]-weights[1]*x)/weights[2]
+plt.figure(figsize = (7,7))
+plt.scatter(np.array(sample)[:,1],np.array(sample)[:,2], color = label_color, alpha = 0.5)
+plt.plot(x,y.T)
+plt.show()
+
+def SGD(inX,label):
+    alpha = 0.001
+    m, n = inX.shape
+    weights = np.ones((n,1))
+    iters = 120
+    #w = pd.DataFrame(weights)
+    #w.index = ['F1','F2']
+    for j in range(iters): 
+        ranIndex = range(m)
+        for i in range(m):
+            Index = int(np.random.uniform(0,len(ranIndex)))
+            weights = weights + alpha * inX[Index].T * (label[Index] - sigmoid(inX[Index] * weights))
+    return weights
+    
+def plotfigure(inX,weights,label):
+    LABEL_COLOR_MAP = {0:'g',1:'r'}
+    label_color = []
+    for i in range(len(label)):
+        label_color.append(LABEL_COLOR_MAP[label[i,0]])
+    x = np.arange(-3.0,3.0,1)
+    y =(-weights[0]-weights[1]*x)/weights[2]
+    plt.figure(figsize = (7,7))
+    plt.scatter(np.array(inX)[:,1],np.array(inX)[:,2], color = label_color, alpha = 0.5)
+    plt.plot(x,y.T)
+    plt.show()
+    
+#使用SGD计算weights
+weights = SGD(sample,label)
+#画出图
+plotfigure(sample, weights, label)
+
+test = pd.read_csv('Ch05/horseColicTest.txt',sep = '\t', header= None)
+train = pd.read_csv('Ch05/horseColicTraining.txt',sep = '\t', header= None)
+trainSet = train.loc[:,:20]
+trainLabels = train.loc[:,21]
+testSet = train.loc[:,:20]
+testLabels = train.loc[:,21]
+
+#定义分类函数
+def classify(inX, w):
+    prob = sigmoid(inX * w)
+    if prob >=0.5: return 1
+    else: return 0
